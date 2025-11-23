@@ -120,5 +120,48 @@ public class UserController {
     }
 
 
+    @PostMapping("/update")
+    public Result<User> updateUserInfo(@RequestBody Map<String,Object> params){
+
+        try {
+            Long id = params.get("id") != null ?
+                    Long.parseLong(params.get("id").toString()) : null;
+            String nickname = (String) params.get("nickname");
+            String phone = (String) params.get("phone");
+            String address = (String) params.get("address");
+            String remark = (String) params.get("remark");
+
+
+            log.info("收到更新用户信息请求 - userId: {}, nickname: {}, phone: {},remark{},",
+                    id, nickname, phone,remark);
+
+            if (id == null) {
+                return Result.error(ResultCode.PARAM_ERROR, "用户ID不能为空");
+            }
+
+            // 手机号格式校验（如果提供了手机号）
+            if (phone != null && !phone.isEmpty() && !phone.matches("^1[3-9]\\d{9}$")) {
+                return Result.error(ResultCode.PARAM_ERROR, "手机号格式不正确");
+            }
+
+            User updatedUser = userService.updateUserInfo(
+                    id, nickname, phone, address, remark
+            );
+
+            if (updatedUser == null) {
+                return Result.error(ResultCode.NOT_FOUND, "用户不存在");
+            }
+
+            log.info("用户信息更新成功 - userId: {}", id);
+            return Result.success(updatedUser); // 返回更新后的用户信息
+        }catch (NumberFormatException e) {
+            log.error("用户ID格式错误", e);
+            return Result.error(ResultCode.PARAM_ERROR, "用户ID格式错误");
+        } catch (Exception e) {
+            log.error("更新用户信息失败", e);
+            return Result.error("更新失败: " + e.getMessage());
+        }
+
+    }
 
 }

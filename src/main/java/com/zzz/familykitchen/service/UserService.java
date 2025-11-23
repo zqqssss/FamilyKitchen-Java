@@ -20,4 +20,6 @@ public interface UserService {
 
 
     User getUserById(Long userId);
+
+    User updateUserInfo(Long id, String nickname, String phone, String address, String remark);
 }

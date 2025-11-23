@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -131,5 +133,48 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserById(Long userId) {
         return userMapper.selectById(userId);
+    }
+
+    /**
+     * ✅ 更新用户信息（新增）
+     */
+    @Override
+    @Transactional
+    public User updateUserInfo(Long userId, String nickname, String phone,
+                               String address, String remark) {
+
+        // 1. 查询用户是否存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            log.warn("用户不存在 - userId: {}", userId);
+            return null;
+        }
+
+        // 2. 更新字段（只更新非空字段）
+        if (nickname != null && !nickname.isEmpty()) {
+            user.setNickname(nickname);
+        }
+        if (phone != null && !phone.isEmpty()) {
+            user.setPhone(phone);
+        }
+        if (address != null && !address.isEmpty()) {
+            user.setAddress(address);
+        }
+        if (remark != null && !remark.isEmpty()) {
+            user.setRemarks(remark);
+        }
+
+        user.setUpdateTime(LocalDateTime.now());
+
+        // 3. 执行更新
+        int rows = userMapper.updateById(user);
+
+        if (rows > 0) {
+            log.info("用户信息更新成功 - userId: {}, 更新行数: {}", userId, rows);
+            return user; // 返回更新后的对象
+        } else {
+            log.error("用户信息更新失败 - userId: {}", userId);
+            return null;
+        }
     }
 }
