@@ -1,6 +1,7 @@
 package com.zzz.familykitchen.pojo.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.zzz.familykitchen.pojo.enums.RecipeCategory;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -23,8 +24,12 @@ public class Recipe {
     private String coverImage;      // 封面图
     private String description;     // 简介
 
-
-
+    /**
+     * 菜品分类
+     * 数据库存 int (1,2,3...)
+     * 代码用 Enum (MEAT, VEGETABLE...)
+     */
+    private RecipeCategory category;
 
     @TableLogic  // 逻辑删除
     private Integer deleted;
