@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import com.zzz.familykitchen.pojo.enums.RecipeCategory;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
@@ -23,6 +24,9 @@ public class Recipe {
     private String title;           // 菜名
     private String coverImage;      // 封面图
     private String description;     // 简介
+
+    // 新增价格字段（用BigDecimal避免浮点精度问题）
+    private BigDecimal price;       // 菜品价格（元）
 
     /**
      * 菜品分类

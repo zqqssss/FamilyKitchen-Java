@@ -32,6 +32,14 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
             wrapper.apply("category = {0}", queryDTO.getCategory()); 
         }
 
+        // 价格区间筛选（新增）
+        if (queryDTO.getMinPrice() != null) {
+            wrapper.ge(Recipe::getPrice, queryDTO.getMinPrice());
+        }
+        if (queryDTO.getMaxPrice() != null) {
+            wrapper.le(Recipe::getPrice, queryDTO.getMaxPrice());
+        }
+
         // 按创建时间倒序
         wrapper.orderByDesc(Recipe::getCreateTime);
 
