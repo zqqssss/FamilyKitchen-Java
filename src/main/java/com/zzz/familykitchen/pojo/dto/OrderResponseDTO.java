@@ -25,5 +25,6 @@ public class OrderResponseDTO {
         private String name;
         private Integer quantity;
         private BigDecimal price;
+        private String image;
     }
 }

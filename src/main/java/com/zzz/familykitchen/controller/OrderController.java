@@ -98,4 +98,25 @@ public class OrderController {
             return Result.error(e.getMessage());
         }
     }
+
+    /**
+     * 获取用户订单列表（小程序端）
+     * @param userId 用户ID
+     * @param status 订单状态（可选）
+     */
+    @GetMapping("/user/{userId}")
+    public Result<List<OrderResponseDTO>> getUserOrders(
+            @PathVariable Long userId,
+            @RequestParam(required = false) Integer status) {
+        try {
+            log.info("查询用户订单: userId={}, status={}", userId, status);
+            List<OrderResponseDTO> orders = orderService.getUserOrders(userId, status);
+            return Result.success(orders);
+        } catch (Exception e) {
+            log.error("查询用户订单失败: userId={}", userId, e);
+            return Result.error("查询订单失败: " + e.getMessage());
+        }
+    }
+
+
 }

@@ -3,11 +3,13 @@ package com.zzz.familykitchen.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zzz.familykitchen.mapper.OrderItemMapper;
 import com.zzz.familykitchen.mapper.OrdersMapper;
+import com.zzz.familykitchen.mapper.RecipeMapper;
 import com.zzz.familykitchen.pojo.dto.CancelOrderDTO;
 import com.zzz.familykitchen.pojo.dto.OrderResponseDTO;
 import com.zzz.familykitchen.pojo.dto.OrderSubmitDTO;
 import com.zzz.familykitchen.pojo.entity.OrderItem;
 import com.zzz.familykitchen.pojo.entity.Orders;
+import com.zzz.familykitchen.pojo.entity.Recipe;
 import com.zzz.familykitchen.service.OrderService;
 import com.zzz.familykitchen.util.OrderNumberGenerator;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    @Autowired
+    private RecipeMapper recipeMapper;
 
     @Autowired
     private OrdersMapper ordersMapper;
@@ -62,6 +67,20 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setOrderId(orderId);
             orderItem.setRecipeId(itemDTO.getDishId());
             orderItem.setName(itemDTO.getName());
+
+            // 核心改造：从recipe表查询cover_image，替代前端传的image
+            String dishImage = null;
+            // 1. 通过recipeId查询菜品信息
+            if (itemDTO.getDishId() != null) {
+                Recipe recipe = recipeMapper.selectById(itemDTO.getDishId());
+                if (recipe != null && recipe.getCoverImage() != null && !recipe.getCoverImage().trim().isEmpty()) {
+                    dishImage = recipe.getCoverImage().trim(); // 取recipe的cover_image
+                }
+            }
+            // 2. 兜底：如果recipe表无图片，用默认图（不再依赖前端传的image）
+            dishImage = dishImage != null ? dishImage : "https://dummyimage.com/100x100/ff9c00/fff.png&text=Dish";
+            orderItem.setImage(dishImage);
+
             orderItem.setPrice(itemDTO.getPrice());
             orderItem.setQuantity(itemDTO.getQuantity());
             orderItem.setCreateTime(LocalDateTime.now());
@@ -171,6 +190,7 @@ public class OrderServiceImpl implements OrderService {
             itemDTO.setId(item.getId());
             itemDTO.setName(item.getName());
             itemDTO.setQuantity(item.getQuantity());
+            itemDTO.setImage(item.getImage()); // 新增这一行
             itemDTO.setPrice(item.getPrice());
             return itemDTO;
         }).collect(Collectors.toList());
@@ -185,5 +205,30 @@ public class OrderServiceImpl implements OrderService {
      */
     private String generateOrderNo() {
         return OrderNumberGenerator.generate();
+    }
+
+    @Override
+    public List<OrderResponseDTO> getUserOrders(Long userId, Integer status) {
+        log.info("查询用户订单列表: userId={}, status={}", userId, status);
+
+        LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 查询指定用户的订单
+        queryWrapper.eq(Orders::getUserId, userId);
+
+        // 如果传入状态，按状态查询
+        if (status != null) {
+            queryWrapper.eq(Orders::getStatus, status);
+        }
+
+        // 按创建时间倒序
+        queryWrapper.orderByDesc(Orders::getCreateTime);
+
+        List<Orders> orders = ordersMapper.selectList(queryWrapper);
+
+        log.info("查询到{}条用户订单", orders.size());
+
+        // 转换为DTO
+        return orders.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 }

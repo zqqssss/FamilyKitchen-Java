@@ -25,4 +25,6 @@ public interface OrderService {
      * 取消订单（管理端）
      */
     void cancelOrder(CancelOrderDTO cancelDTO);
+
+    List<OrderResponseDTO> getUserOrders(Long userId, Integer status);
 }

@@ -21,5 +21,6 @@ public class OrderSubmitDTO {
         private String name;          // 菜品名称
         private Integer quantity;     // 数量
         private BigDecimal price;     // 单价
+        private String image;
     }
 }
