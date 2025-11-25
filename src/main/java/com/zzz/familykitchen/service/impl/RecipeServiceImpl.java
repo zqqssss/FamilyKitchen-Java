@@ -6,9 +6,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zzz.familykitchen.mapper.RecipeMapper;
 import com.zzz.familykitchen.pojo.dto.RecipeQueryDTO;
 import com.zzz.familykitchen.pojo.entity.Recipe;
+import com.zzz.familykitchen.pojo.enums.RecipeCategory;
 import com.zzz.familykitchen.service.RecipeService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> implements RecipeService {
@@ -55,5 +62,53 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
             recipe.setUserId(1L); 
         }
         return this.save(recipe);
+    }
+
+    @Override
+    public List<Map<String, Object>> getMenuByCategory() {
+
+        // 1️⃣ 从数据库查询所有菜品（未删除的）
+        LambdaQueryWrapper<Recipe> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Recipe::getDeleted, 0)
+                .orderBy(true, true, Recipe::getCategory);  // 按分类排序
+
+        List<Recipe> allRecipes = this.list(wrapper);
+
+        // 2️⃣ 按分类分组
+        Map<RecipeCategory, List<Recipe>> groupedMap = allRecipes.stream()
+                .collect(Collectors.groupingBy(Recipe::getCategory));
+
+        // 3️⃣ 构建返回数据
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 遍历所有分类枚举
+        for (RecipeCategory category : RecipeCategory.values()) {
+
+            // 获取该分类下的菜品列表（如果没有则为空列表）
+            List<Recipe> dishes = groupedMap.getOrDefault(category, new ArrayList<>());
+
+            // 构建分类对象
+            Map<String, Object> categoryMap = new HashMap<>();
+            categoryMap.put("id", category.getCode());       // 分类ID (1,2,3...)
+            categoryMap.put("name", category.getDesc());     // 分类名称 ("肉菜","素菜"...)
+            categoryMap.put("count", 0);                     // 初始选中数量为0
+
+            // 构建菜品列表
+            List<Map<String, Object>> dishList = dishes.stream().map(recipe -> {
+                Map<String, Object> dishMap = new HashMap<>();
+                dishMap.put("id", recipe.getId());
+                dishMap.put("name", recipe.getTitle());
+                dishMap.put("price", recipe.getPrice());
+                dishMap.put("image", recipe.getCoverImage());
+                dishMap.put("description", recipe.getDescription());
+                return dishMap;
+            }).collect(Collectors.toList());
+
+            categoryMap.put("dishes", dishList);
+
+            result.add(categoryMap);
+        }
+
+        return result;
     }
 }

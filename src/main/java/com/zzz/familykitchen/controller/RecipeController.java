@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -115,5 +117,11 @@ public class RecipeController {
             log.error("图片上传失败", e);
             return Result.error("上传失败: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/menu")
+    public Result<List<Map<String, Object>>> getMenu() {
+        List<Map<String, Object>> menuData = recipeService.getMenuByCategory();
+        return Result.success(menuData);
     }
 }
