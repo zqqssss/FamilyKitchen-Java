@@ -27,16 +27,16 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
 
         // 2. 构建查询条件
         LambdaQueryWrapper<Recipe> wrapper = new LambdaQueryWrapper<>();
-        
+
         // 按标题模糊查询
         wrapper.like(StringUtils.hasText(queryDTO.getTitle()), Recipe::getTitle, queryDTO.getTitle());
-        
+
         // 按分类查询 (注意：MyBatis-Plus 会自动处理 Integer 到 Enum 的转换，只要配置正确)
         // 如果前端传的是 null，则不拼接此条件
         if (queryDTO.getCategory() != null) {
             // 这里假设你的 RecipeCategory 枚举能处理 int 值，或者底层直接存 int
             // 如果数据库是 tinyint，MyBatis-Plus + @EnumValue 会自动处理
-            wrapper.apply("category = {0}", queryDTO.getCategory()); 
+            wrapper.apply("category = {0}", queryDTO.getCategory());
         }
 
         // 价格区间筛选（新增）
@@ -59,7 +59,7 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
         // 这里可以添加业务逻辑，比如：获取当前登录用户的 ID
         // 假设当前登录用户 ID 固定为 1 (实际应从 Token/Context 中获取)
         if (recipe.getUserId() == null) {
-            recipe.setUserId(1L); 
+            recipe.setUserId(1L);
         }
         return this.save(recipe);
     }
@@ -70,7 +70,7 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
         // 1️⃣ 从数据库查询所有菜品（未删除的）
         LambdaQueryWrapper<Recipe> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Recipe::getDeleted, 0)
-                .orderBy(true, true, Recipe::getCategory);  // 按分类排序
+                .orderBy(true, true, Recipe::getCategory); // 按分类排序
 
         List<Recipe> allRecipes = this.list(wrapper);
 
@@ -89,9 +89,9 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
 
             // 构建分类对象
             Map<String, Object> categoryMap = new HashMap<>();
-            categoryMap.put("id", category.getCode());       // 分类ID (1,2,3...)
-            categoryMap.put("name", category.getDesc());     // 分类名称 ("肉菜","素菜"...)
-            categoryMap.put("count", 0);                     // 初始选中数量为0
+            categoryMap.put("id", category.getCode()); // 分类ID (1,2,3...)
+            categoryMap.put("name", category.getDesc()); // 分类名称 ("肉菜","素菜"...)
+            categoryMap.put("count", 0); // 初始选中数量为0
 
             // 构建菜品列表
             List<Map<String, Object>> dishList = dishes.stream().map(recipe -> {
@@ -99,7 +99,15 @@ public class RecipeServiceImpl extends ServiceImpl<RecipeMapper, Recipe> impleme
                 dishMap.put("id", recipe.getId());
                 dishMap.put("name", recipe.getTitle());
                 dishMap.put("price", recipe.getPrice());
-                dishMap.put("image", recipe.getCoverImage());
+
+                // 动态替换图片地址中的 localhost，确保手机可以访问
+                String image = recipe.getCoverImage();
+                if (image != null) {
+                    image = image.replace("localhost", "192.168.199.171")
+                            .replace("127.0.0.1", "192.168.199.171");
+                }
+                dishMap.put("image", image);
+
                 dishMap.put("description", recipe.getDescription());
                 return dishMap;
             }).collect(Collectors.toList());

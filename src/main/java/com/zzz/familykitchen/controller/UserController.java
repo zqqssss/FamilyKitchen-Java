@@ -22,17 +22,18 @@ public class UserController {
 
     /**
      * 登录逻辑
+     * 
      * @param params
      * @return
      */
     @PostMapping("/login")
-    public Result<User> login(@RequestBody Map<String,String> params){
+    public Result<User> login(@RequestBody Map<String, String> params) {
         try {
-            String code=params.get("code");
-            String avatarUrl=params.get("avatarUrl");
+            String code = params.get("code");
+            String avatarUrl = params.get("avatarUrl");
             String nickname = params.get("nickname");
 
-            log.info("收到登录请求 nickname：{}",nickname);
+            log.info("收到登录请求 nickname：{}", nickname);
 
             if (code == null || code.isEmpty()) {
                 return Result.error(ResultCode.PARAM_ERROR, "登录code不能为空");
@@ -47,16 +48,16 @@ public class UserController {
 
             log.info("登录成功 - userId: {}, nickname: {}", user.getId(), user.getNickname());
             return Result.success(user); // 成功返回：code=200 + 用户数据
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("登录失败", e);
             return Result.error("登录失败: " + e.getMessage()); // 失败返回：code=500 + 异常信息
         }
 
     }
 
-
     /**
      * 头像文件上传
+     * 
      * @param userId
      * @param avatar
      * @return
@@ -99,6 +100,7 @@ public class UserController {
 
     /**
      * 获取已有用户信息
+     * 
      * @param userId
      * @return
      */
@@ -119,21 +121,18 @@ public class UserController {
         }
     }
 
-
     @PostMapping("/update")
-    public Result<User> updateUserInfo(@RequestBody Map<String,Object> params){
+    public Result<User> updateUserInfo(@RequestBody Map<String, Object> params) {
 
         try {
-            Long id = params.get("id") != null ?
-                    Long.parseLong(params.get("id").toString()) : null;
+            Long id = params.get("id") != null ? Long.parseLong(params.get("id").toString()) : null;
             String nickname = (String) params.get("nickname");
             String phone = (String) params.get("phone");
             String address = (String) params.get("address");
             String remark = (String) params.get("remark");
 
-
             log.info("收到更新用户信息请求 - userId: {}, nickname: {}, phone: {},remark{},",
-                    id, nickname, phone,remark);
+                    id, nickname, phone, remark);
 
             if (id == null) {
                 return Result.error(ResultCode.PARAM_ERROR, "用户ID不能为空");
@@ -145,8 +144,7 @@ public class UserController {
             }
 
             User updatedUser = userService.updateUserInfo(
-                    id, nickname, phone, address, remark
-            );
+                    id, nickname, phone, address, remark);
 
             if (updatedUser == null) {
                 return Result.error(ResultCode.NOT_FOUND, "用户不存在");
@@ -154,7 +152,7 @@ public class UserController {
 
             log.info("用户信息更新成功 - userId: {}", id);
             return Result.success(updatedUser); // 返回更新后的用户信息
-        }catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             log.error("用户ID格式错误", e);
             return Result.error(ResultCode.PARAM_ERROR, "用户ID格式错误");
         } catch (Exception e) {
@@ -162,6 +160,14 @@ public class UserController {
             return Result.error("更新失败: " + e.getMessage());
         }
 
+    }
+
+    /**
+     * 获取所有用户列表
+     */
+    @GetMapping("/list")
+    public Result<java.util.List<User>> getUserList() {
+        return Result.success(userService.findAll());
     }
 
 }

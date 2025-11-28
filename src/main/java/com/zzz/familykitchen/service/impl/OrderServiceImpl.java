@@ -52,7 +52,7 @@ public class OrderServiceImpl implements OrderService {
         order.setAddress(orderDTO.getAddress());
         order.setAmount(orderDTO.getAmount());
         order.setRemark(orderDTO.getRemark());
-        order.setStatus(0);  // 待处理
+        order.setStatus(0); // 待处理
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
 
@@ -89,6 +89,9 @@ public class OrderServiceImpl implements OrderService {
 
         orderItems.forEach(item -> orderItemMapper.insert(item));
         log.info("订单明细插入成功: 共{}件商品", orderItems.size());
+
+        // 发送微信通知
+        sendPushPlusNotification(order);
 
         return orderId;
     }
@@ -128,7 +131,7 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("订单状态异常，无法接单");
         }
 
-        order.setStatus(1);  // 已完成
+        order.setStatus(1); // 已完成
         order.setUpdateTime(LocalDateTime.now());
 
         ordersMapper.updateById(order);
@@ -150,7 +153,7 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("订单状态异常，无法取消");
         }
 
-        order.setStatus(2);  // 已取消
+        order.setStatus(2); // 已取消
         order.setCancelReason(cancelDTO.getCancelReason());
         order.setUpdateTime(LocalDateTime.now());
 
@@ -230,5 +233,50 @@ public class OrderServiceImpl implements OrderService {
 
         // 转换为DTO
         return orders.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    @org.springframework.beans.factory.annotation.Value("${pushplus.token}")
+    private String pushPlusToken;
+
+    /**
+     * 发送 PushPlus 微信通知
+     */
+    private void sendPushPlusNotification(Orders order) {
+        new Thread(() -> {
+            try {
+                log.info("开始发送微信通知...");
+                okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
+
+                String title = "新订单提醒！单号：" + order.getOrderNo();
+                String content = "您有新的订单！\n" +
+                        "下单人：" + order.getConsignee() + "\n" +
+                        "电话：" + order.getPhone() + "\n" +
+                        "地址：" + order.getAddress() + "\n" +
+                        "金额：￥" + order.getAmount() + "\n" +
+                        "备注：" + (order.getRemark() == null ? "无" : order.getRemark());
+
+                // 构建JSON请求体
+                String json = "{" +
+                        "\"token\": \"" + pushPlusToken + "\"," +
+                        "\"title\": \"" + title + "\"," +
+                        "\"content\": \"" + content + "\"," +
+                        "\"template\": \"txt\"" +
+                        "}";
+
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(
+                        json, okhttp3.MediaType.get("application/json; charset=utf-8"));
+
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url("http://www.pushplus.plus/send")
+                        .post(body)
+                        .build();
+
+                try (okhttp3.Response response = client.newCall(request).execute()) {
+                    log.info("微信通知发送结果: {}", response.body().string());
+                }
+            } catch (Exception e) {
+                log.error("发送微信通知失败", e);
+            }
+        }).start();
     }
 }

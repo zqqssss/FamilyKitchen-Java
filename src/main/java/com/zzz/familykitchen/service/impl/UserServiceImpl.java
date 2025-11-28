@@ -1,4 +1,5 @@
 package com.zzz.familykitchen.service.impl;
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zzz.familykitchen.mapper.UserMapper;
 import com.zzz.familykitchen.util.WxUtil;
@@ -141,7 +142,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User updateUserInfo(Long userId, String nickname, String phone,
-                               String address, String remark) {
+            String address, String remark) {
 
         // 1. 查询用户是否存在
         User user = userMapper.selectById(userId);
@@ -176,5 +177,10 @@ public class UserServiceImpl implements UserService {
             log.error("用户信息更新失败 - userId: {}", userId);
             return null;
         }
+    }
+
+    @Override
+    public java.util.List<User> findAll() {
+        return userMapper.selectList(null);
     }
 }

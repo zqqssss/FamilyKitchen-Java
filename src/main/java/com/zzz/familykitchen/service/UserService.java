@@ -12,14 +12,16 @@ import java.io.IOException;
 
 public interface UserService {
 
-
     User login(String code, String nickname, String avatarUrl) throws IOException;
 
-
     String uploadAvatar(Long userId, MultipartFile avatar) throws IOException;
-
 
     User getUserById(Long userId);
 
     User updateUserInfo(Long id, String nickname, String phone, String address, String remark);
+
+    /**
+     * 获取所有用户
+     */
+    java.util.List<User> findAll();
 }
